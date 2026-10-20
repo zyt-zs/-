@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>航班查询</title>
+  <style>
+    body { font-family: "Microsoft YaHei", sans-serif; max-width: 900px; margin: 30px auto; }
+    .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+    input, select, button { padding: 8px 12px; font-size: 15px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 14px; }
+    th { background: #f5f5f5; }
+    .empty { color: #999; text-align: center; padding: 30px; }
+  </style>
+</head>
+<body>
+  <h2>✈️ ❤️航班查询</h2>
+  <div class="search-bar">
+    <input id="from" placeholder="出发城市，如：吉林">
+    <input id="to" placeholder="到达城市，如：北京">
+    <input id="date" type="date" value="2026-10-20">
+    <select id="sort">
+      <option value="price">按价格</option>
+      <option value="time">时间</option>
+    </select>
+    <button onclick="doSearch()">搜索</button>
+  </div>
+  <div id="result"><p class="empty">输入条件后点击搜索</p></div>
+
+<script>
+async function doSearch() {
+  const from = document.getElementById("from").value.trim();
+  const to = document.getElementById("to").value.trim();
+  const date = document.getElementById("date").value;
+  const sort = document.getElementById("sort").value;
+  const box = document.getElementById("result");
+
+  if (!from || !to) { alert("请填写出发和到达城市"); return; }
+
+  box.innerHTML = "<p class='empty'>查询中…</p>";
+  const resp = await fetch(`/api/flights/search?from=${from}&to=${to}&date=${date}&sort=${sort}`);
+  const data = await resp.json();
+
+  if (data.code !== 0 || data.count === 0) {
+    box.innerHTML = "<p class='empty'>未找到符合条件的航班</p>";
+    return;
+  }
+  let html = `<table><tr><th>航班号</th><th>航司</th><th>出发</th><th>到达</th><th>飞行时长</th><th>票价</th><th>余座</th></tr>`;
+  for (const f of data.flights) {
+    const h = Math.floor(f.duration / 60), m = f.duration % 60;
+    html += `<tr><td>${f.flight_no}</td><td>${f.airline}</td>
+             <td>${f.dep_airport}<br>${f.dep_time}</td>
+             <td>${f.arr_airport}<br>${f.arr_time}</td>
+             <td>${h}小时${m}分</td><td>¥${f.price}</td><td>${f.seats_left}</td></tr>`;
+  }
+  box.innerHTML = html + "</table>";
+}
+</script>
+</body>
+</html>
